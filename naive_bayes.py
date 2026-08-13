@@ -1,3 +1,4 @@
+import math
 class NaiveBayes:
     def __init__(self, smoothing=1.0):
         # smoothing = Laplace smoothing value
@@ -24,10 +25,24 @@ class NaiveBayes:
                 self.class_word_totals[label] += 1
         self.n_docs = len(y)
     
-    def predict(self, X: list[str]) -> list[str]: ...
+    def predict(self, X: list[str]) -> list[str]:
+        result = []
+        for doc in X:
+            tokens = self._tokenize(doc)
+            scores = self._score(tokens)
+            best_label = max(scores, key=scores.get)
+            result.append(best_label)
+        return result
+
+    def predict_proba(self, X: list[str]) -> list[dict]:
+        for doc in X:
+            tokens = self._tokenize(doc)
+            scores = self._score(tokens)
+            for score in scores:
+                scores.get()
+            best_label = max(scores, key=scores.get)
+
     
-    def predict_proba(self, X: list[str]) -> list[dict]: ...
-    # returns [{"spam": 0.9, "not_spam": 0.1}, ...]
     
     def _tokenize(self, text: str) -> list[str]:
         text = text.lower()
@@ -39,14 +54,17 @@ class NaiveBayes:
 
     
     def _score(self, tokens: list[str]) -> dict:
-        self.class_prob = {}
-        for single in self.classes:
-            self.class_prob[single] = self.class_counts[single]/self.n_docs
+        result = {}
         for label in self.classes:
+            class_prob = math.log2(self.class_counts[label]/self.n_docs)
+            sum_word_prob = 0
             for token in tokens:
-                word_count = self.word_counts[label][token] + self.smoothing
-                log_p = word_count / self.class_word_totals[label] + self.smoothing
-
+                word_count = self.word_counts[label].get(token, 0) + self.smoothing
+                log_p = math.log2(word_count / (self.class_word_totals[label] + self.smoothing * len(self.vocab)))
+                sum_word_prob +=log_p
+            log_p_class_doc = class_prob + sum_word_prob
+            result[label] = log_p_class_doc
+        return result
 
 
 if __name__ == "__main__":
@@ -55,6 +73,5 @@ if __name__ == "__main__":
         ["win free money", "free prize click", "meeting tomorrow", "lunch today"],
         ["spam", "spam", "not_spam", "not_spam"]
     )
-    print(nb.class_counts)
-    print(nb.word_counts["spam"])
-    print(nb.vocab)
+    scores = nb._score(["win", "free"])
+    print(scores)  # spam score should be higher than not_spam
