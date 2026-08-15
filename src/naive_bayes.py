@@ -35,13 +35,17 @@ class NaiveBayes:
         return result
 
     def predict_proba(self, X: list[str]) -> list[dict]:
+        result = []
         for doc in X:
             tokens = self._tokenize(doc)
             scores = self._score(tokens)
-            for score in scores:
-                scores.get()
-            best_label = max(scores, key=scores.get)
-
+            max_score = max(scores.values())
+            scores = {k: 2**(v-max_score) for k,v in scores.items()}
+            total = sum(scores.values())
+            scores = {k: v/total for k, v in scores.items()}
+            result.append(scores)
+        return result
+                
     
     
     def _tokenize(self, text: str) -> list[str]:
@@ -73,5 +77,7 @@ if __name__ == "__main__":
         ["win free money", "free prize click", "meeting tomorrow", "lunch today"],
         ["spam", "spam", "not_spam", "not_spam"]
     )
-    scores = nb._score(["win", "free"])
-    print(scores)  # spam score should be higher than not_spam
+    print(nb.predict(["win free money", "meeting tomorrow"]))
+    # → ["spam", "not_spam"]
+    print(nb.predict_proba(["win free money"]))
+    # → [{"spam": ~0.9, "not_spam": ~0.1}]  # spam score should be higher than not_spam
